@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	db, err := database.Connect("postgresql://user:pass@localhost:5432/db")
+	db, err := database.Connect("postgresql://user:pass@localhost:5432/db?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,14 +29,15 @@ func main() {
 	r.Mount("/tasks", taskHandler.Routes())
 
 	server := &http.Server{
-		Addr:         ":8080",
-		Handler:      r,
-		ReadTimeout:  5 * time.Second,  // максимальное время пока сервер прочитает запрос от клиента
-		WriteTimeout: 10 * time.Second, // максимальное время на ответ сервера для клиента
-		IdleTimeout:  60 * time.Second, // время которое мы держим неактивное соединение
+		Addr:              ":8080",
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	serverErr := make(chan error, 1)
+
 	go func() {
 		log.Println("server started on :8080")
 
@@ -44,8 +45,8 @@ func main() {
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			serverErr <- err
 		}
-		close(serverErr)
 	}()
+
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -58,7 +59,7 @@ func main() {
 		log.Println("shutdown signal received")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
@@ -68,5 +69,6 @@ func main() {
 			log.Printf("forced server close failed: %v", err)
 		}
 	}
+
 	log.Println("server stopped")
 }

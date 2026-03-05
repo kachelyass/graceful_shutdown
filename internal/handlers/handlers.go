@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"time"
 
 	"example.com/m/v2/internal/database"
 	"github.com/go-chi/chi/v5"
@@ -26,6 +28,13 @@ func (h *TaskHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, tasks)
 }
 
+func (h *TaskHandler) Sleep(w http.ResponseWriter, r *http.Request) {
+	log.Println("sleep started")
+	time.Sleep(8 * time.Second)
+	log.Println("sleep finished")
+	_, _ = w.Write([]byte("ok"))
+}
+
 func writeJSON(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -43,5 +52,6 @@ func writeError(w http.ResponseWriter, status int, message string) {
 func (h *TaskHandler) Routes() http.Handler {
 	r := chi.NewRouter()
 	r.Get("/", h.GetAll)
+	r.Get("/sleep", h.Sleep)
 	return r
 }
