@@ -3,14 +3,16 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+
 	"example.com/m/v2/internal/database"
+	"github.com/go-chi/chi/v5"
 )
 
 type TaskHandler struct {
 	store *database.TaskStore
 }
 
-func newTaskHandler(store *database.TaskStore) *TaskHandler {
+func NewTaskHandler(store *database.TaskStore) *TaskHandler {
 	return &TaskHandler{store: store}
 }
 
@@ -36,4 +38,10 @@ func writeJSON(w http.ResponseWriter, status int, data any) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]string{"error": message})
+}
+
+func (h *TaskHandler) Routes() http.Handler {
+	r := chi.NewRouter()
+	r.Get("/", h.GetAll)
+	return r
 }
